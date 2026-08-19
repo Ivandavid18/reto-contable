@@ -1,349 +1,1244 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reto Contable</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+<title>Reto Contable</title>
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            color: #1f2937;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+<style>
 
-        .contenedor {
-            width: 90%;
-            max-width: 850px;
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12);
-            text-align: center;
-        }
+* {
+    box-sizing: border-box;
+}
 
-        .logo {
-            font-size: 50px;
-            margin-bottom: 10px;
-        }
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f4f7f5;
+    color: #17201a;
+    min-height: 100vh;
+}
 
-        h1 {
-            margin: 0;
-            font-size: 42px;
-            color: #166534;
-        }
+header {
+    background: #14532d;
+    color: white;
+    padding: 25px 20px;
+    text-align: center;
+}
 
-        .subtitulo {
-            font-size: 18px;
-            color: #6b7280;
-            margin-top: 10px;
-            margin-bottom: 35px;
-        }
+header h1 {
+    margin: 0;
+    font-size: 36px;
+}
 
-        .tarjeta {
-            background: #f0fdf4;
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 25px;
-        }
+header p {
+    margin: 8px 0 0;
+    opacity: 0.9;
+}
 
-        .etiqueta {
-            font-size: 14px;
-            font-weight: bold;
-            color: #15803d;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
-        }
+.contenedor {
+    width: 92%;
+    max-width: 950px;
+    margin: 35px auto;
+}
 
-        #concepto {
-            font-size: 38px;
-            font-weight: bold;
-            margin: 10px 0;
-            color: #111827;
-        }
+.panel {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+    margin-bottom: 25px;
+}
 
-        #instruccion {
-            color: #6b7280;
-            font-size: 17px;
-        }
+h2 {
+    margin-top: 0;
+}
 
-        button {
-            border: none;
-            border-radius: 10px;
-            padding: 15px 25px;
-            font-size: 17px;
-            font-weight: bold;
-            cursor: pointer;
-            margin: 8px;
-            transition: 0.2s;
-        }
+.configuracion {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
 
-        button:hover {
-            transform: translateY(-2px);
-        }
+select {
+    width: 100%;
+    padding: 13px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    font-size: 16px;
+    background: white;
+}
 
-        .boton-principal {
-            background: #15803d;
-            color: white;
-        }
+.concepto-box {
+    text-align: center;
+    background: #f0fdf4;
+    border-radius: 18px;
+    padding: 35px 20px;
+    margin-top: 25px;
+}
 
-        .boton-secundario {
-            background: #e5e7eb;
-            color: #374151;
-        }
+.etiqueta {
+    color: #15803d;
+    font-weight: bold;
+    font-size: 13px;
+    letter-spacing: 2px;
+}
 
-        .temporizador {
-            font-size: 64px;
-            font-weight: bold;
-            margin: 25px 0;
-            font-family: monospace;
-        }
+#concepto {
+    font-size: 45px;
+    margin: 15px 0;
+    font-weight: bold;
+}
 
-        .estado {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
+.info {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
 
-        .oculto {
-            display: none;
-        }
+.badge {
+    background: #dcfce7;
+    color: #166534;
+    padding: 7px 13px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+}
 
-        .estadisticas {
-            margin-top: 25px;
-            color: #6b7280;
-            font-size: 15px;
-        }
+button {
+    border: none;
+    padding: 14px 22px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin: 6px;
+    transition: 0.2s;
+}
 
-        @media (max-width: 600px) {
-            .contenedor {
-                padding: 25px 18px;
-            }
+button:hover {
+    transform: translateY(-2px);
+}
 
-            h1 {
-                font-size: 32px;
-            }
+.btn-principal {
+    background: #15803d;
+    color: white;
+}
 
-            #concepto {
-                font-size: 30px;
-            }
+.btn-secundario {
+    background: #e5e7eb;
+    color: #374151;
+}
 
-            .temporizador {
-                font-size: 48px;
-            }
-        }
-    </style>
+.btn-repasar {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.temporizador-box {
+    text-align: center;
+    margin-top: 25px;
+}
+
+.estado {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+#temporizador {
+    font-family: monospace;
+    font-size: 70px;
+    font-weight: bold;
+    margin: 15px 0;
+}
+
+.progreso {
+    height: 10px;
+    background: #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+#barra {
+    height: 100%;
+    width: 0%;
+    background: #15803d;
+    transition: width 1s linear;
+}
+
+.preguntas {
+    background: #f9fafb;
+    padding: 20px;
+    border-radius: 15px;
+    margin-top: 20px;
+}
+
+.preguntas li {
+    margin: 12px 0;
+}
+
+.oculto {
+    display: none;
+}
+
+.estadisticas {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.stat {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+}
+
+.stat-numero {
+    font-size: 30px;
+    font-weight: bold;
+    color: #15803d;
+}
+
+.stat-texto {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+#listaRepaso {
+    padding-left: 20px;
+}
+
+.rep {
+    margin: 8px 0;
+}
+
+footer {
+    text-align: center;
+    padding: 25px;
+    color: #6b7280;
+}
+
+@media (max-width: 650px) {
+
+    header h1 {
+        font-size: 28px;
+    }
+
+    .configuracion {
+        grid-template-columns: 1fr;
+    }
+
+    #concepto {
+        font-size: 34px;
+    }
+
+    #temporizador {
+        font-size: 52px;
+    }
+
+    .estadisticas {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+</style>
 </head>
 
 <body>
 
+<header>
+
+    <h1>📚 Reto Contable</h1>
+
+    <p>
+        Investiga. Comprende. Explica.
+    </p>
+
+</header>
+
+
 <div class="contenedor">
 
-    <div class="logo">📚</div>
 
-    <h1>Reto Contable</h1>
+<!-- CONFIGURACIÓN -->
 
-    <div class="subtitulo">
-        Investiga. Comprende. Explica.
+<div class="panel">
+
+    <h2>⚙️ Configura tu reto</h2>
+
+    <div class="configuracion">
+
+        <div>
+
+            <label>
+                <strong>Categoría</strong>
+            </label>
+
+            <select id="categoria">
+
+                <option value="Todas">
+                    🎲 Todas
+                </option>
+
+                <option value="Fundamentos">
+                    📘 Fundamentos
+                </option>
+
+                <option value="NIIF">
+                    📊 NIIF
+                </option>
+
+                <option value="Auditoría">
+                    🔎 Auditoría
+                </option>
+
+                <option value="Tributaria">
+                    💰 Tributaria
+                </option>
+
+                <option value="Costos">
+                    🧮 Costos
+                </option>
+
+                <option value="Finanzas">
+                    💼 Finanzas
+                </option>
+
+                <option value="Contabilidad Pública">
+                    🏛️ Contabilidad Pública
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div>
+
+            <label>
+                <strong>Dificultad</strong>
+            </label>
+
+            <select id="dificultad">
+
+                <option value="Todas">
+                    🎲 Todas
+                </option>
+
+                <option value="Fácil">
+                    🟢 Fácil
+                </option>
+
+                <option value="Intermedio">
+                    🟡 Intermedio
+                </option>
+
+                <option value="Difícil">
+                    🔴 Difícil
+                </option>
+
+            </select>
+
+        </div>
+
     </div>
 
-    <!-- CONCEPTO -->
-    <div class="tarjeta">
+
+    <div class="concepto-box">
 
         <div class="etiqueta">
-            CONCEPTO CONTABLE
+            TU CONCEPTO
         </div>
 
         <div id="concepto">
             ¿Listo para comenzar?
         </div>
 
-        <p id="instruccion">
-            Presiona el botón para recibir un concepto de Contaduría Pública.
+        <div class="info">
+
+            <span id="categoriaTexto" class="badge">
+                📚 Contaduría
+            </span>
+
+            <span id="dificultadTexto" class="badge">
+                🎯 Todos
+            </span>
+
+        </div>
+
+        <p id="mensaje">
+            Elige tus preferencias y obtén un concepto al azar.
         </p>
+
+
+        <button
+            class="btn-principal"
+            onclick="nuevoConcepto()">
+
+            🎲 SACAR CONCEPTO
+
+        </button>
 
     </div>
 
-    <!-- TEMPORIZADOR -->
-    <div id="zonaTemporizador" class="oculto">
+</div>
+
+
+<!-- TEMPORIZADOR -->
+
+<div id="zonaReto" class="panel oculto">
+
+    <div class="temporizador-box">
 
         <div id="estado" class="estado">
             🔎 Tiempo para investigar
         </div>
 
-        <div id="temporizador" class="temporizador">
+        <div id="temporizador">
             15:00
         </div>
 
-        <button
-            class="boton-principal"
-            onclick="comenzarExplicacion()">
-            🗣️ Ya entendí, quiero explicarlo
-        </button>
+        <div class="progreso">
 
-    </div>
+            <div id="barra"></div>
 
-    <!-- BOTONES -->
-    <div id="botones">
+        </div>
 
-        <button
-            class="boton-principal"
-            onclick="nuevoConcepto()">
-            🎲 Sacar concepto
-        </button>
 
-    </div>
+        <div>
 
-    <div class="estadisticas">
-        Conceptos estudiados: <span id="contador">0</span>
+            <button
+                class="btn-secundario"
+                onclick="pausar()">
+
+                ⏸️ Pausar
+
+            </button>
+
+
+            <button
+                class="btn-principal"
+                onclick="comenzarExplicacion()">
+
+                🗣️ Ya entendí
+
+            </button>
+
+
+            <button
+                class="btn-secundario"
+                onclick="reiniciar()">
+
+                🔄 Reiniciar
+
+            </button>
+
+        </div>
+
     </div>
 
 </div>
 
+
+<!-- PREGUNTAS -->
+
+<div id="zonaExplicacion" class="panel oculto">
+
+    <h2>
+        🗣️ Ahora explícalo
+    </h2>
+
+    <p>
+        Tienes <strong>1 minuto</strong>.
+        Intenta responder sin mirar tus apuntes.
+    </p>
+
+    <div class="preguntas">
+
+        <strong>Intenta responder:</strong>
+
+        <ol>
+
+            <li>
+                ¿Qué es este concepto?
+            </li>
+
+            <li>
+                ¿Para qué sirve?
+            </li>
+
+            <li>
+                ¿Cómo se aplica?
+            </li>
+
+            <li>
+                Da un ejemplo.
+            </li>
+
+            <li>
+                ¿Con qué otro concepto se relaciona?
+            </li>
+
+        </ol>
+
+    </div>
+
+
+    <div class="temporizador-box">
+
+        <div id="temporizadorExplicacion">
+            01:00
+        </div>
+
+    </div>
+
+
+    <button
+        class="btn-repasar"
+        onclick="guardarRepaso()">
+
+        ❓ No lo entendí / repasar
+
+    </button>
+
+
+    <button
+        class="btn-principal"
+        onclick="terminarReto()">
+
+        ✅ Lo entendí
+
+    </button>
+
+</div>
+
+
+<!-- ESTADÍSTICAS -->
+
+<div class="estadisticas">
+
+    <div class="stat">
+
+        <div
+            id="contador"
+            class="stat-numero">
+            0
+        </div>
+
+        <div class="stat-texto">
+            Retos realizados
+        </div>
+
+    </div>
+
+
+    <div class="stat">
+
+        <div
+            id="entendidos"
+            class="stat-numero">
+            0
+        </div>
+
+        <div class="stat-texto">
+            Conceptos entendidos
+        </div>
+
+    </div>
+
+
+    <div class="stat">
+
+        <div
+            id="pendientes"
+            class="stat-numero">
+            0
+        </div>
+
+        <div class="stat-texto">
+            Para repasar
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- REPASO -->
+
+<div class="panel">
+
+    <h2>
+        📌 Mis palabras para repasar
+    </h2>
+
+    <p>
+        Aquí aparecerán los conceptos que marques porque todavía no los dominas.
+    </p>
+
+    <ul id="listaRepaso">
+
+        <li>
+            Todavía no tienes conceptos pendientes.
+        </li>
+
+    </ul>
+
+</div>
+
+
+</div>
+
+
+<footer>
+
+    🧾 Reto Contable · Herramienta de estudio
+
+</footer>
+
+
 <script>
 
-    const conceptos = [
-        "Activo",
-        "Pasivo",
-        "Patrimonio",
-        "Ingresos",
-        "Gastos",
-        "Costos",
-        "Débito",
-        "Crédito",
-        "Partida doble",
-        "Ecuación contable",
-        "Depreciación",
-        "Amortización",
-        "Inventarios",
-        "Devengo",
-        "Deterioro",
-        "Valor razonable",
-        "Provisión",
-        "Pasivo contingente",
-        "Activo intangible",
-        "Materialidad",
-        "Políticas contables",
-        "Estimaciones contables",
-        "Hecho económico",
-        "Instrumento financiero",
-        "Impuesto diferido",
-        "Valor presente",
-        "Costo amortizado",
-        "Arrendamiento",
-        "Plusvalía",
-        "Consolidación"
-    ];
 
-    let conceptoActual = "";
-    let tiempo = 15 * 60;
-    let intervalo;
-    let contador = 0;
+/* ================================
+   BANCO DE CONCEPTOS
+================================ */
 
-    function nuevoConcepto() {
+const conceptos = [
 
-        clearInterval(intervalo);
+    {
+        nombre: "Activo",
+        categoria: "Fundamentos",
+        dificultad: "Fácil"
+    },
 
-        const posicion =
-            Math.floor(Math.random() * conceptos.length);
+    {
+        nombre: "Pasivo",
+        categoria: "Fundamentos",
+        dificultad: "Fácil"
+    },
 
-        conceptoActual = conceptos[posicion];
+    {
+        nombre: "Patrimonio",
+        categoria: "Fundamentos",
+        dificultad: "Fácil"
+    },
 
-        document.getElementById("concepto").textContent =
-            conceptoActual;
+    {
+        nombre: "Partida doble",
+        categoria: "Fundamentos",
+        dificultad: "Fácil"
+    },
 
-        document.getElementById("instruccion").textContent =
-            "Investiga este concepto durante 15 minutos. Después intenta explicarlo con tus propias palabras.";
+    {
+        nombre: "Ecuación contable",
+        categoria: "Fundamentos",
+        dificultad: "Fácil"
+    },
 
-        document.getElementById("zonaTemporizador")
-            .classList.remove("oculto");
+    {
+        nombre: "Débito",
+        categoria: "Fundamentos",
+        dificultad: "Fácil"
+    },
 
-        document.getElementById("botones").classList.add("oculto");
+    {
+        nombre: "Crédito",
+        categoria: "Fundamentos",
+        dificultad: "Fácil"
+    },
 
-        tiempo = 15 * 60;
+    {
+        nombre: "Devengo",
+        categoria: "NIIF",
+        dificultad: "Intermedio"
+    },
+
+    {
+        nombre: "Materialidad",
+        categoria: "NIIF",
+        dificultad: "Intermedio"
+    },
+
+    {
+        nombre: "Valor razonable",
+        categoria: "NIIF",
+        dificultad: "Intermedio"
+    },
+
+    {
+        nombre: "Deterioro",
+        categoria: "NIIF",
+        dificultad: "Intermedio"
+    },
+
+    {
+        nombre: "Provisión",
+        categoria: "NIIF",
+        dificultad: "Intermedio"
+    },
+
+    {
+        nombre: "Activo intangible",
+        categoria: "NIIF",
+        dificultad: "Intermedio"
+    },
+
+    {
+        nombre: "Impuesto diferido",
+        categoria: "Tributaria",
+        dificultad: "Difícil"
+    },
+
+    {
+        nombre: "Hecho generador",
+        categoria: "Tributaria",
+        dificultad: "Intermedio"
+    },
+
+    {
+        nombre: "Base gravable",
+        categoria: "Tributaria",
+        dificultad: "Intermedio"
+    },
+
+    {
+        nombre: "Retención en la fuente",
+        categoria: "Tributaria",
+        dificultad: "Intermedio"
+    },
+
+    {
+        nombre: "Evidencia de auditoría",
+        categoria: "Auditoría",
+        dificultad: "Intermedio"
+    },
+
+    {
+        nombre: "Riesgo inherente",
+        categoria: "Auditoría",
+        dificultad: "Difícil"
+    },
+
+    {
+        nombre: "Riesgo de control",
+        categoria: "Auditoría",
+        dificultad: "Difícil"
+    },
+
+    {
+        nombre: "Riesgo de detección",
+        categoria: "Auditoría",
+        dificultad: "Difícil"
+    },
+
+    {
+        nombre: "Costo fijo",
+        categoria: "Costos",
+        dificultad: "Fácil"
+    },
+
+    {
+        nombre: "Costo variable",
+        categoria: "Costos",
+        dificultad: "Fácil"
+    },
+
+    {
+        nombre: "Margen de contribución",
+        categoria: "Costos",
+        dificultad: "Intermedio"
+    },
+
+    {
+        nombre: "Costeo ABC",
+        categoria: "Costos",
+        dificultad: "Difícil"
+    },
+
+    {
+        nombre: "Flujo de caja",
+        categoria: "Finanzas",
+        dificultad: "Fácil"
+    },
+
+    {
+        nombre: "Valor presente neto",
+        categoria: "Finanzas",
+        dificultad: "Intermedio"
+    },
+
+    {
+        nombre: "Tasa interna de retorno",
+        categoria: "Finanzas",
+        dificultad: "Intermedio"
+    },
+
+    {
+        nombre: "Liquidez",
+        categoria: "Finanzas",
+        dificultad: "Fácil"
+    },
+
+    {
+        nombre: "Hecho económico",
+        categoria: "Contabilidad Pública",
+        dificultad: "Intermedio"
+    },
+
+    {
+        nombre: "Reconocimiento",
+        categoria: "Contabilidad Pública",
+        dificultad: "Intermedio"
+    },
+
+    {
+        nombre: "Medición",
+        categoria: "Contabilidad Pública",
+        dificultad: "Intermedio"
+    },
+
+    {
+        nombre: "Revelación",
+        categoria: "Contabilidad Pública",
+        dificultad: "Intermedio"
+    },
+
+    {
+        nombre: "Catálogo General de Cuentas",
+        categoria: "Contabilidad Pública",
+        dificultad: "Difícil"
+    }
+
+];
+
+
+/* ================================
+   VARIABLES
+================================ */
+
+let conceptoActual = null;
+
+let tiempo = 15 * 60;
+
+let tiempoExplicacion = 60;
+
+let intervalo = null;
+
+let intervaloExplicacion = null;
+
+let pausado = false;
+
+let retos = Number(
+    localStorage.getItem("retos") || 0
+);
+
+let entendidos = Number(
+    localStorage.getItem("entendidos") || 0
+);
+
+let repaso = JSON.parse(
+    localStorage.getItem("repaso") || "[]"
+);
+
+
+/* ================================
+   MOSTRAR ESTADÍSTICAS
+================================ */
+
+actualizarEstadisticas();
+
+mostrarRepaso();
+
+
+/* ================================
+   NUEVO CONCEPTO
+================================ */
+
+function nuevoConcepto() {
+
+    clearInterval(intervalo);
+
+    clearInterval(intervaloExplicacion);
+
+    const categoria =
+        document.getElementById("categoria").value;
+
+    const dificultad =
+        document.getElementById("dificultad").value;
+
+
+    let disponibles = conceptos.filter(function(c) {
+
+        const categoriaOK =
+            categoria === "Todas" ||
+            c.categoria === categoria;
+
+        const dificultadOK =
+            dificultad === "Todas" ||
+            c.dificultad === dificultad;
+
+        return categoriaOK && dificultadOK;
+
+    });
+
+
+    if (disponibles.length === 0) {
+
+        alert(
+            "No hay conceptos con esos filtros todavía."
+        );
+
+        return;
+
+    }
+
+
+    const posicion =
+        Math.floor(
+            Math.random() * disponibles.length
+        );
+
+
+    conceptoActual =
+        disponibles[posicion];
+
+
+    document.getElementById("concepto").textContent =
+        conceptoActual.nombre;
+
+
+    document.getElementById("categoriaTexto").textContent =
+        "📚 " + conceptoActual.categoria;
+
+
+    document.getElementById("dificultadTexto").textContent =
+        "🎯 " + conceptoActual.dificultad;
+
+
+    document.getElementById("mensaje").textContent =
+        "Investiga este concepto durante 15 minutos. No busques memorizar: intenta comprenderlo.";
+
+    document.getElementById("zonaReto")
+        .classList.remove("oculto");
+
+
+    document.getElementById("zonaExplicacion")
+        .classList.add("oculto");
+
+
+    tiempo = 15 * 60;
+
+    pausado = false;
+
+    actualizarTemporizador();
+
+
+    intervalo = setInterval(function() {
+
+        if (pausado) return;
+
+        tiempo--;
 
         actualizarTemporizador();
 
-        intervalo = setInterval(function() {
+        if (tiempo <= 0) {
 
-            tiempo--;
+            clearInterval(intervalo);
 
-            actualizarTemporizador();
+            comenzarExplicacion();
 
-            if (tiempo <= 0) {
+        }
 
-                clearInterval(intervalo);
+    }, 1000);
 
-                alert("⏰ ¡Se acabaron los 15 minutos! Ahora intenta explicar el concepto.");
 
-                comenzarExplicacion();
+    retos++;
+
+    localStorage.setItem(
+        "retos",
+        retos
+    );
+
+
+    actualizarEstadisticas();
+
+
+    window.scrollTo({
+        top: document.getElementById("zonaReto").offsetTop - 20,
+        behavior: "smooth"
+    });
+
+}
+
+
+/* ================================
+   TEMPORIZADOR 15 MIN
+================================ */
+
+function actualizarTemporizador() {
+
+    const minutos =
+        Math.floor(tiempo / 60);
+
+    const segundos =
+        tiempo % 60;
+
+
+    document.getElementById("temporizador").textContent =
+
+        String(minutos).padStart(2, "0") +
+
+        ":" +
+
+        String(segundos).padStart(2, "0");
+
+
+    const porcentaje =
+        ((15 * 60 - tiempo) / (15 * 60)) * 100;
+
+
+    document.getElementById("barra").style.width =
+        porcentaje + "%";
+
+}
+
+
+/* ================================
+   PAUSAR
+================================ */
+
+function pausar() {
+
+    pausado = !pausado;
+
+}
+
+
+/* ================================
+   EXPLICACIÓN
+================================ */
+
+function comenzarExplicacion() {
+
+    clearInterval(intervalo);
+
+    tiempoExplicacion = 60;
+
+
+    document.getElementById("zonaExplicacion")
+        .classList.remove("oculto");
+
+
+    document.getElementById("estado").textContent =
+        "🗣️ ¡Ahora explícalo!";
+
+
+    actualizarExplicacion();
+
+
+    intervaloExplicacion =
+        setInterval(function() {
+
+            tiempoExplicacion--;
+
+            actualizarExplicacion();
+
+
+            if (tiempoExplicacion <= 0) {
+
+                clearInterval(
+                    intervaloExplicacion
+                );
+
+                alert(
+                    "⏰ Terminó el minuto. ¿Qué tanto lograste explicar?"
+                );
+
             }
 
         }, 1000);
 
-        contador++;
 
-        document.getElementById("contador").textContent =
-            contador;
+    window.scrollTo({
+
+        top:
+            document.getElementById(
+                "zonaExplicacion"
+            ).offsetTop - 20,
+
+        behavior: "smooth"
+
+    });
+
+}
+
+
+/* ================================
+   TEMPORIZADOR EXPLICACIÓN
+================================ */
+
+function actualizarExplicacion() {
+
+    const minutos =
+        Math.floor(
+            tiempoExplicacion / 60
+        );
+
+    const segundos =
+        tiempoExplicacion % 60;
+
+
+    document.getElementById(
+        "temporizadorExplicacion"
+    ).textContent =
+
+        String(minutos).padStart(2, "0") +
+
+        ":" +
+
+        String(segundos).padStart(2, "0");
+
+}
+
+
+/* ================================
+   MARCAR ENTENDIDO
+================================ */
+
+function terminarReto() {
+
+    clearInterval(intervaloExplicacion);
+
+    entendidos++;
+
+    localStorage.setItem(
+        "entendidos",
+        entendidos
+    );
+
+
+    actualizarEstadisticas();
+
+
+    alert(
+        "🎉 ¡Excelente! Concepto marcado como entendido."
+    );
+
+}
+
+
+/* ================================
+   GUARDAR PARA REPASAR
+================================ */
+
+function guardarRepaso() {
+
+    if (!conceptoActual) return;
+
+
+    const existe =
+        repaso.some(function(c) {
+
+            return c.nombre ===
+                conceptoActual.nombre;
+
+        });
+
+
+    if (!existe) {
+
+        repaso.push(conceptoActual);
+
+        localStorage.setItem(
+            "repaso",
+            JSON.stringify(repaso)
+        );
+
     }
 
-    function actualizarTemporizador() {
 
-        const minutos =
-            Math.floor(tiempo / 60);
+    mostrarRepaso();
 
-        const segundos =
-            tiempo % 60;
+    actualizarEstadisticas();
 
-        document.getElementById("temporizador").textContent =
-            String(minutos).padStart(2, "0") +
-            ":" +
-            String(segundos).padStart(2, "0");
+
+    alert(
+        "📌 Guardado en tus palabras para repasar."
+    );
+
+}
+
+
+/* ================================
+   MOSTRAR REPASO
+================================ */
+
+function mostrarRepaso() {
+
+    const lista =
+        document.getElementById(
+            "listaRepaso"
+        );
+
+
+    if (repaso.length === 0) {
+
+        lista.innerHTML =
+            "<li>Todavía no tienes conceptos pendientes.</li>";
+
+        return;
+
     }
 
-    function comenzarExplicacion() {
 
-        clearInterval(intervalo);
+    lista.innerHTML = "";
 
-        tiempo = 60;
 
-        document.getElementById("estado").textContent =
-            "🗣️ ¡Explícalo en 1 minuto!";
+    repaso.forEach(function(c, index) {
 
-        actualizarTemporizador();
+        const li =
+            document.createElement("li");
 
-        intervalo = setInterval(function() {
+        li.className = "rep";
 
-            tiempo--;
 
-            actualizarTemporizador();
+        li.innerHTML =
 
-            if (tiempo <= 0) {
+            "<strong>" +
+            c.nombre +
+            "</strong> · " +
+            c.categoria +
+            " · " +
+            c.dificultad +
 
-                clearInterval(intervalo);
+            " <button onclick='eliminarRepaso(" +
+            index +
+            ")'>✓</button>";
 
-                alert("⏰ ¡Terminó el minuto! ¡Muy bien!");
 
-                document.getElementById("estado").textContent =
-                    "✅ Reto terminado";
+        lista.appendChild(li);
 
-                document.getElementById("botones").classList.remove("oculto");
+    });
 
-            }
+}
 
-        }, 1000);
-    }
 
-</script>
+/* ================================
+   ELIMINAR DE REPASO
+================================ */
 
-</body>
-</html>
+function eliminarRepaso(index) {
+
+    repaso.splice(index, 1);
+
+    localStorage.setItem(
+        "repaso",
+        JSON.stringify(repaso)
+    );
