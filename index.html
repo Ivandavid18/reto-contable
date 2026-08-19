@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reto Contable</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #1f2937;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .contenedor {
+            width: 90%;
+            max-width: 850px;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12);
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 50px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 42px;
+            color: #166534;
+        }
+
+        .subtitulo {
+            font-size: 18px;
+            color: #6b7280;
+            margin-top: 10px;
+            margin-bottom: 35px;
+        }
+
+        .tarjeta {
+            background: #f0fdf4;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 25px;
+        }
+
+        .etiqueta {
+            font-size: 14px;
+            font-weight: bold;
+            color: #15803d;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        #concepto {
+            font-size: 38px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #111827;
+        }
+
+        #instruccion {
+            color: #6b7280;
+            font-size: 17px;
+        }
+
+        button {
+            border: none;
+            border-radius: 10px;
+            padding: 15px 25px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 8px;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        .boton-principal {
+            background: #15803d;
+            color: white;
+        }
+
+        .boton-secundario {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .temporizador {
+            font-size: 64px;
+            font-weight: bold;
+            margin: 25px 0;
+            font-family: monospace;
+        }
+
+        .estado {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .oculto {
+            display: none;
+        }
+
+        .estadisticas {
+            margin-top: 25px;
+            color: #6b7280;
+            font-size: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .contenedor {
+                padding: 25px 18px;
+            }
+
+            h1 {
+                font-size: 32px;
+            }
+
+            #concepto {
+                font-size: 30px;
+            }
+
+            .temporizador {
+                font-size: 48px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="contenedor">
+
+    <div class="logo">📚</div>
+
+    <h1>Reto Contable</h1>
+
+    <div class="subtitulo">
+        Investiga. Comprende. Explica.
+    </div>
+
+    <!-- CONCEPTO -->
+    <div class="tarjeta">
+
+        <div class="etiqueta">
+            CONCEPTO CONTABLE
+        </div>
+
+        <div id="concepto">
+            ¿Listo para comenzar?
+        </div>
+
+        <p id="instruccion">
+            Presiona el botón para recibir un concepto de Contaduría Pública.
+        </p>
+
+    </div>
+
+    <!-- TEMPORIZADOR -->
+    <div id="zonaTemporizador" class="oculto">
+
+        <div id="estado" class="estado">
+            🔎 Tiempo para investigar
+        </div>
+
+        <div id="temporizador" class="temporizador">
+            15:00
+        </div>
+
+        <button
+            class="boton-principal"
+            onclick="comenzarExplicacion()">
+            🗣️ Ya entendí, quiero explicarlo
+        </button>
+
+    </div>
+
+    <!-- BOTONES -->
+    <div id="botones">
+
+        <button
+            class="boton-principal"
+            onclick="nuevoConcepto()">
+            🎲 Sacar concepto
+        </button>
+
+    </div>
+
+    <div class="estadisticas">
+        Conceptos estudiados: <span id="contador">0</span>
+    </div>
+
+</div>
+
+<script>
+
+    const conceptos = [
+        "Activo",
+        "Pasivo",
+        "Patrimonio",
+        "Ingresos",
+        "Gastos",
+        "Costos",
+        "Débito",
+        "Crédito",
+        "Partida doble",
+        "Ecuación contable",
+        "Depreciación",
+        "Amortización",
+        "Inventarios",
+        "Devengo",
+        "Deterioro",
+        "Valor razonable",
+        "Provisión",
+        "Pasivo contingente",
+        "Activo intangible",
+        "Materialidad",
+        "Políticas contables",
+        "Estimaciones contables",
+        "Hecho económico",
+        "Instrumento financiero",
+        "Impuesto diferido",
+        "Valor presente",
+        "Costo amortizado",
+        "Arrendamiento",
+        "Plusvalía",
+        "Consolidación"
+    ];
+
+    let conceptoActual = "";
+    let tiempo = 15 * 60;
+    let intervalo;
+    let contador = 0;
+
+    function nuevoConcepto() {
+
+        clearInterval(intervalo);
+
+        const posicion =
+            Math.floor(Math.random() * conceptos.length);
+
+        conceptoActual = conceptos[posicion];
+
+        document.getElementById("concepto").textContent =
+            conceptoActual;
+
+        document.getElementById("instruccion").textContent =
+            "Investiga este concepto durante 15 minutos. Después intenta explicarlo con tus propias palabras.";
+
+        document.getElementById("zonaTemporizador")
+            .classList.remove("oculto");
+
+        document.getElementById("botones").classList.add("oculto");
+
+        tiempo = 15 * 60;
+
+        actualizarTemporizador();
+
+        intervalo = setInterval(function() {
+
+            tiempo--;
+
+            actualizarTemporizador();
+
+            if (tiempo <= 0) {
+
+                clearInterval(intervalo);
+
+                alert("⏰ ¡Se acabaron los 15 minutos! Ahora intenta explicar el concepto.");
+
+                comenzarExplicacion();
+            }
+
+        }, 1000);
+
+        contador++;
+
+        document.getElementById("contador").textContent =
+            contador;
+    }
+
+    function actualizarTemporizador() {
+
+        const minutos =
+            Math.floor(tiempo / 60);
+
+        const segundos =
+            tiempo % 60;
+
+        document.getElementById("temporizador").textContent =
+            String(minutos).padStart(2, "0") +
+            ":" +
+            String(segundos).padStart(2, "0");
+    }
+
+    function comenzarExplicacion() {
+
+        clearInterval(intervalo);
+
+        tiempo = 60;
+
+        document.getElementById("estado").textContent =
+            "🗣️ ¡Explícalo en 1 minuto!";
+
+        actualizarTemporizador();
+
+        intervalo = setInterval(function() {
+
+            tiempo--;
+
+            actualizarTemporizador();
+
+            if (tiempo <= 0) {
+
+                clearInterval(intervalo);
+
+                alert("⏰ ¡Terminó el minuto! ¡Muy bien!");
+
+                document.getElementById("estado").textContent =
+                    "✅ Reto terminado";
+
+                document.getElementById("botones").classList.remove("oculto");
+
+            }
+
+        }, 1000);
+    }
+
+</script>
+
+</body>
+</html>
