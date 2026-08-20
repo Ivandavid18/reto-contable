@@ -467,89 +467,90 @@ function actualizarBotonGrabacion() {
 
 async function enviarAudioIA(audio) {
 
-    const boton =
-        document.getElementById(
-            "botonGrabacion"
-        );
-
-
     const resultado =
-        document.getElementById(
-            "resultadoIA"
-        );
-
-
-    if (boton) {
-
-        boton.disabled = true;
-
-        boton.textContent =
-            "🤖 ANALIZANDO...";
-
-    }
-
+        document.getElementById("resultadoIA");
 
     if (resultado) {
 
-        resultado.classList.remove(
-            "oculto"
-        );
+        resultado.classList.remove("oculto");
 
         resultado.innerHTML =
-            "<p>🎧 Procesando tu explicación...</p>";
+            "<p>🤖 Analizando tu explicación...</p>";
 
     }
 
-
     try {
 
-        const datos =
-            new FormData();
+        const reader = new FileReader();
 
+        reader.onloadend = async function() {
 
-        datos.append(
-            "audio",
-            audio,
-            "explicacion.webm"
-        );
+            try {
 
+                const base64 =
+                    reader.result.split(",")[1];
 
-        datos.append(
-            "concepto",
-            conceptoActual
-                ? conceptoActual.nombre
-                : ""
-        );
+                const respuesta =
+                    await fetch(
+                        "/api/evaluar",
+                        {
+                            method: "POST",
 
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
 
-        const respuesta =
-            await fetch(
-                "https://reto-contable.vercel.app/api/evaluar",
-                {
-                    method: "POST",
-                    body: datos
+                            body: JSON.stringify({
+
+                                audio: base64,
+
+                                concepto:
+                                    conceptoActual
+                                        ? conceptoActual.nombre
+                                        : ""
+
+                            })
+                        }
+                    );
+
+                const datos =
+                    await respuesta.json();
+
+                console.log(
+                    "Respuesta de la IA:",
+                    datos
+                );
+
+                if (!respuesta.ok) {
+
+                    throw new Error(
+                        datos.error ||
+                        "La IA no pudo evaluar la explicación."
+                    );
+
                 }
-            );
 
+                mostrarResultadoIA(datos);
 
-        const datosRespuesta =
-            await respuesta.json();
+            } catch (error) {
 
+                console.error(error);
 
-        if (!respuesta.ok) {
+                if (resultado) {
 
-            throw new Error(
-                datosRespuesta.error ||
-                "No se pudo evaluar la explicación."
-            );
+                    resultado.innerHTML =
+                        "<p>❌ " +
+                        error.message +
+                        "</p>";
 
-        }
+                }
 
+            }
 
-        mostrarResultadoIA(
-            datosRespuesta
-        );
+        };
 
+        reader.readAsDataURL(audio);
 
     } catch (error) {
 
@@ -558,21 +559,9 @@ async function enviarAudioIA(audio) {
         if (resultado) {
 
             resultado.innerHTML =
-
-                "<p>❌ " +
-                error.message +
-                "</p>";
+                "<p>❌ No se pudo enviar el audio.</p>";
 
         }
-
-    }
-
-
-    if (boton) {
-
-        boton.disabled = false;
-
-        actualizarBotonGrabacion();
 
     }
 
