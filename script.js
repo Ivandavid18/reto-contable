@@ -329,3 +329,5 @@ function reiniciar() {
 
 actualizarEstadisticas();
 mostrarRepaso();
+
+console.log("SCRIPT.JS CARGADO CORRECTAMENTE");
