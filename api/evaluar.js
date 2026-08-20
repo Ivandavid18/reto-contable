@@ -1,30 +1,37 @@
 export default async function handler(req, res) {
 
     if (req.method !== "POST") {
+
         return res.status(405).json({
             error: "Método no permitido"
         });
+
     }
+
 
     try {
 
-        const body = req.body || {};
-
-        const audio = body.audio;
-        const concepto = body.concepto;
+        const {
+            audio,
+            concepto
+        } = req.body || {};
 
 
         if (!audio) {
+
             return res.status(400).json({
                 error: "No se recibió el audio."
             });
+
         }
 
 
         if (!concepto) {
+
             return res.status(400).json({
                 error: "No se recibió el concepto."
             });
+
         }
 
 
@@ -33,16 +40,17 @@ export default async function handler(req, res) {
 
 
         if (!apiKey) {
+
             return res.status(500).json({
-                error:
-                    "La API de OpenAI no está configurada."
+                error: "La API de OpenAI no está configurada."
             });
+
         }
 
 
         /*
         ========================================
-        CONVERTIR AUDIO BASE64
+        1. CONVERTIR BASE64 A AUDIO
         ========================================
         */
 
@@ -50,7 +58,7 @@ export default async function handler(req, res) {
             Buffer.from(audio, "base64");
 
 
-        const audioBlob =
+        const archivoAudio =
             new Blob(
                 [audioBuffer],
                 {
@@ -61,7 +69,7 @@ export default async function handler(req, res) {
 
         /*
         ========================================
-        ENVIAR AUDIO A OPENAI
+        2. ENVIAR AUDIO A OPENAI
         ========================================
         */
 
@@ -71,7 +79,7 @@ export default async function handler(req, res) {
 
         formulario.append(
             "file",
-            audioBlob,
+            archivoAudio,
             "explicacion.webm"
         );
 
@@ -93,7 +101,8 @@ export default async function handler(req, res) {
                             "Bearer " + apiKey
                     },
 
-                    body: formulario
+                    body:
+                        formulario
                 }
             );
 
@@ -105,14 +114,15 @@ export default async function handler(req, res) {
         if (!respuestaTranscripcion.ok) {
 
             console.error(
-                "ERROR OPENAI TRANSCRIPCIÓN:",
+                "Error transcripción:",
                 datosTranscripcion
             );
 
             return res.status(500).json({
                 error:
-                    "OpenAI no pudo transcribir el audio."
+                    "No se pudo transcribir el audio."
             });
+
         }
 
 
@@ -122,9 +132,52 @@ export default async function handler(req, res) {
 
         /*
         ========================================
-        EVALUAR CON IA
+        3. EVALUAR EXPLICACIÓN
         ========================================
         */
+
+        const prompt = `
+Eres un profesor de contabilidad.
+
+El estudiante debía explicar el siguiente concepto:
+
+CONCEPTO:
+${concepto}
+
+Esta fue su explicación transcrita:
+
+"${transcripcion}"
+
+Evalúa si realmente parece comprender el concepto.
+
+Responde EXCLUSIVAMENTE en JSON con esta estructura:
+
+{
+  "aprobado": true,
+  "nota": 8,
+  "nivel": "Bueno",
+  "retroalimentacion": "Explicación clara...",
+  "fortalezas": [
+    "..."
+  ],
+  "por_mejorar": [
+    "..."
+  ]
+}
+
+La nota debe ser de 0 a 10.
+
+Considera que:
+
+0-4 = No demuestra comprensión suficiente.
+5-6 = Comprensión básica.
+7-8 = Buena comprensión.
+9-10 = Excelente comprensión.
+
+No evalúes la gramática ni la forma de hablar.
+Evalúa principalmente si entiende el concepto, para qué sirve y cómo se aplica.
+`;
+
 
         const respuestaIA =
             await fetch(
@@ -144,45 +197,24 @@ export default async function handler(req, res) {
 
                         model: "gpt-4o-mini",
 
+                        response_format: {
+                            type: "json_object"
+                        },
+
                         messages: [
 
                             {
                                 role: "system",
-
                                 content:
-                                    "Eres un profesor de contabilidad. " +
-                                    "Evalúa si el estudiante realmente " +
-                                    "comprendió el concepto. " +
-                                    "Sé claro, justo y breve."
+                                    "Eres un profesor experto en contabilidad."
                             },
 
                             {
                                 role: "user",
-
-                                content:
-
-                                    "El concepto que debía explicar es: " +
-                                    concepto +
-
-                                    "\n\nLa explicación del estudiante fue:\n" +
-                                    transcripcion +
-
-                                    "\n\nEvalúa la explicación y responde con:\n\n" +
-
-                                    "RESULTADO: APROBADO o NECESITA REPASAR\n" +
-
-                                    "PUNTUACIÓN: X/10\n" +
-
-                                    "FORTALEZA: una frase\n" +
-
-                                    "DEBE MEJORAR: una frase\n" +
-
-                                    "RECOMENDACIÓN: una frase"
+                                content: prompt
                             }
 
-                        ],
-
-                        temperature: 0.2
+                        ]
 
                     })
                 }
@@ -196,38 +228,83 @@ export default async function handler(req, res) {
         if (!respuestaIA.ok) {
 
             console.error(
-                "ERROR OPENAI EVALUACIÓN:",
+                "Error evaluación:",
                 datosIA
             );
 
             return res.status(500).json({
                 error:
-                    "OpenAI no pudo evaluar la explicación."
+                    "No se pudo evaluar la explicación."
             });
+
         }
 
 
-        const evaluacion =
-            datosIA
-                .choices?.[0]
-                ?.message?.content || "";
+        const contenido =
+            datosIA.choices?.[0]?.message?.content;
+
+
+        if (!contenido) {
+
+            return res.status(500).json({
+                error:
+                    "La IA no devolvió una evaluación."
+            });
+
+        }
+
+
+        let evaluacion;
+
+
+        try {
+
+            evaluacion =
+                JSON.parse(contenido);
+
+        } catch (error) {
+
+            console.error(
+                "Error convirtiendo evaluación:",
+                contenido
+            );
+
+            return res.status(500).json({
+                error:
+                    "La respuesta de la IA no tuvo el formato esperado."
+            });
+
+        }
 
 
         /*
         ========================================
-        RESPUESTA FINAL
+        4. DEVOLVER RESULTADO
         ========================================
         */
 
         return res.status(200).json({
 
-            ok: true,
-
             transcripcion:
                 transcripcion,
 
-            evaluacion:
-                evaluacion
+            aprobado:
+                evaluacion.aprobado,
+
+            nota:
+                evaluacion.nota,
+
+            nivel:
+                evaluacion.nivel,
+
+            retroalimentacion:
+                evaluacion.retroalimentacion,
+
+            fortalezas:
+                evaluacion.fortalezas || [],
+
+            por_mejorar:
+                evaluacion.por_mejorar || []
 
         });
 
@@ -239,9 +316,11 @@ export default async function handler(req, res) {
             error
         );
 
+
         return res.status(500).json({
 
             error:
+                error.message ||
                 "Ocurrió un error al procesar la explicación."
 
         });
