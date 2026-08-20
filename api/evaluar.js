@@ -1,407 +1,224 @@
-export default async function handler(request) {
+export default async function handler(req, res) {
 
-    if (request.method !== "POST") {
-
-        return new Response(
-            JSON.stringify({
-                error: "Método no permitido"
-            }),
-            {
-                status: 405,
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            }
-        );
-
+    if (req.method !== "POST") {
+        return res.status(405).json({
+            error: "Método no permitido"
+        });
     }
-
 
     try {
 
-        const body = request.body;
-
-        const audio = body?.audio;
-        const concepto = body?.concepto;
-
+        const { audio, concepto } = req.body || {};
 
         if (!audio) {
-
-            return new Response(
-                JSON.stringify({
-                    error: "No se recibió el audio."
-                }),
-                {
-                    status: 400,
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                }
-            );
-
+            return res.status(400).json({
+                error: "No se recibió el audio."
+            });
         }
-
 
         if (!concepto) {
-
-            return new Response(
-                JSON.stringify({
-                    error: "No se recibió el concepto."
-                }),
-                {
-                    status: 400,
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                }
-            );
-
+            return res.status(400).json({
+                error: "No se recibió el concepto."
+            });
         }
 
-
-        const apiKey =
-            process.env.OPENAI_API_KEY;
-
-
-        if (!audio) {
-
-            return new Response(
-                JSON.stringify({
-                    error: "No se recibió el audio."
-                }),
-                {
-                    status: 400,
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                }
-            );
-
-        }
-
-
-        if (!concepto) {
-
-            return new Response(
-                JSON.stringify({
-                    error: "No se recibió el concepto."
-                }),
-                {
-                    status: 400,
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                }
-            );
-
-        }
-
-
-        const apiKey =
-            process.env.OPENAI_API_KEY;
-
+        const apiKey = process.env.OPENAI_API_KEY;
 
         if (!apiKey) {
-
-            return new Response(
-                JSON.stringify({
-                    error: "La API de OpenAI no está configurada."
-                }),
-                {
-                    status: 500,
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                }
-            );
-
+            return res.status(500).json({
+                error: "La API de OpenAI no está configurada."
+            });
         }
 
 
         /*
         ========================================
-        1. TRANSCRIBIR EL AUDIO
+        1. CONVERTIR BASE64 A ARCHIVO
         ========================================
         */
 
-        const transcripcionForm =
-            new FormData();
+        const audioBuffer = Buffer.from(audio, "base64");
 
-
-        transcripcionForm.append(
-            "file",
-            audio,
-            "explicacion.webm"
+        const audioBlob = new Blob(
+            [audioBuffer],
+            {
+                type: "audio/webm"
+            }
         );
 
 
-        transcripcionForm.append(
+        /*
+        ========================================
+        2. TRANSCRIBIR
+        ========================================
+        */
+
+        const formulario = new FormData();
+
+        formulario.append(
+            "file",
+            audioBlob,
+            "explicacion.webm"
+        );
+
+        formulario.append(
             "model",
             "gpt-4o-mini-transcribe"
         );
 
 
-        const respuestaTranscripcion =
-            await fetch(
-                "https://api.openai.com/v1/audio/transcriptions",
-                {
-                    method: "POST",
+        const respuestaTranscripcion = await fetch(
+            "https://api.openai.com/v1/audio/transcriptions",
+            {
+                method: "POST",
 
-                    headers: {
-                        "Authorization":
-                            "Bearer " + apiKey
-                    },
+                headers: {
+                    "Authorization": "Bearer " + apiKey
+                },
 
-                    body:
-                        transcripcionForm
-                }
-            );
-
-
-        if (!respuestaTranscripcion.ok) {
-
-            const errorTexto =
-                await respuestaTranscripcion.text();
-
-            console.error(
-                "Error de transcripción:",
-                errorTexto
-            );
-
-            return new Response(
-                JSON.stringify({
-                    error:
-                        "No se pudo transcribir el audio."
-                }),
-                {
-                    status: 500,
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    }
-                }
-            );
-
-        }
+                body: formulario
+            }
+        );
 
 
         const datosTranscripcion =
             await respuestaTranscripcion.json();
 
 
-        const texto =
-            datosTranscripcion.text;
+        if (!respuestaTranscripcion.ok) {
+
+            console.error(
+                "Error transcripción:",
+                datosTranscripcion
+            );
+
+            return res.status(500).json({
+                error: "No se pudo transcribir el audio."
+            });
+
+        }
+
+
+        const transcripcion =
+            datosTranscripcion.text || "";
 
 
         /*
         ========================================
-        2. EVALUAR LA EXPLICACIÓN CON IA
+        3. EVALUAR EXPLICACIÓN CON IA
         ========================================
         */
 
-        const prompt = `
+        const respuestaIA = await fetch(
+            "https://api.openai.com/v1/chat/completions",
+            {
+                method: "POST",
 
-Eres un profesor universitario experto en
-Contaduría Pública.
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + apiKey
+                },
 
-Un estudiante está realizando un ejercicio
-de aprendizaje.
+                body: JSON.stringify({
 
-El concepto que debía explicar es:
+                    model: "gpt-4o-mini",
 
-"${concepto}"
+                    messages: [
 
-Esta fue su explicación:
+                        {
+                            role: "system",
 
-"${texto}"
+                            content:
+                                "Eres un profesor de contabilidad. " +
+                                "Evalúa si el estudiante realmente comprendió " +
+                                "el concepto que está explicando. " +
+                                "Sé justo, claro y breve."
+                        },
 
-Evalúa si realmente comprende el concepto.
+                        {
+                            role: "user",
 
-NO exijas que utilice exactamente una
-definición de libro.
+                            content:
+                                "Concepto que debía explicar: " +
+                                concepto +
 
-Evalúa principalmente:
+                                "\n\nExplicación del estudiante:\n" +
+                                transcripcion +
 
-1. Si entiende qué significa.
-2. Si explica para qué sirve.
-3. Si explica correctamente cómo se aplica.
-4. Si utiliza un ejemplo cuando sea posible.
-5. Si relaciona correctamente el concepto
-   con otros conceptos contables.
-6. Si existen errores conceptuales.
+                                "\n\nEvalúa la explicación y responde exactamente con esta estructura:\n\n" +
 
-Asigna una calificación de 0 a 10.
+                                "RESULTADO: APROBADO o NECESITA REPASAR\n" +
 
-Después determina uno de estos estados:
+                                "PUNTUACIÓN: X/10\n" +
 
-"COMPRENDIDO"
+                                "FORTALEZA: una frase\n" +
 
-"NECESITA REPASO"
+                                "DEBE MEJORAR: una frase\n" +
 
-Devuelve ÚNICAMENTE un JSON válido con
-esta estructura:
+                                "RECOMENDACIÓN: una frase"
+                        }
 
-{
-    "nota": 0,
-    "estado": "COMPRENDIDO",
-    "resumen": "",
-    "fortalezas": [],
-    "errores": [],
-    "recomendacion": ""
-}
+                    ],
 
-No agregues texto fuera del JSON.
-`;
+                    temperature: 0.2
 
-
-        const respuestaIA =
-            await fetch(
-                "https://api.openai.com/v1/responses",
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json",
-
-                        "Authorization":
-                            "Bearer " + apiKey
-                    },
-
-                    body: JSON.stringify({
-
-                        model: "gpt-5.6-luna",
-
-                        input: prompt
-
-                    })
-
-                }
-            );
-
-
-        if (!respuestaIA.ok) {
-
-            const errorTexto =
-                await respuestaIA.text();
-
-            console.error(
-                "Error de evaluación:",
-                errorTexto
-            );
-
-            return new Response(
-                JSON.stringify({
-                    error:
-                        "La IA no pudo evaluar la explicación."
-                }),
-                {
-                    status: 500,
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    }
-                }
-            );
-
-        }
+                })
+            }
+        );
 
 
         const datosIA =
             await respuestaIA.json();
 
 
-        const resultadoTexto =
-            datosIA.output_text;
-
-
-        let evaluacion;
-
-
-        try {
-
-            evaluacion =
-                JSON.parse(resultadoTexto);
-
-        } catch (error) {
+        if (!respuestaIA.ok) {
 
             console.error(
-                "La IA no devolvió JSON válido:",
-                resultadoTexto
+                "Error evaluación IA:",
+                datosIA
             );
 
-            return new Response(
-                JSON.stringify({
-                    error:
-                        "La evaluación de la IA tuvo un formato inesperado."
-                }),
-                {
-                    status: 500,
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    }
-                }
-            );
+            return res.status(500).json({
+                error: "No se pudo evaluar la explicación."
+            });
 
         }
 
 
+        const evaluacion =
+            datosIA.choices?.[0]?.message?.content || "";
+
+
         /*
         ========================================
-        3. DEVOLVER RESULTADO
+        4. RESPUESTA
         ========================================
         */
 
-        return new Response(
+        return res.status(200).json({
 
-            JSON.stringify({
+            ok: true,
 
-                transcripcion: texto,
+            transcripcion: transcripcion,
 
-                evaluacion: evaluacion
+            evaluacion: evaluacion
 
-            }),
-
-            {
-
-                status: 200,
-
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                }
-
-            }
-
-        );
+        });
 
 
     } catch (error) {
 
-        console.error(error);
-
-        return new Response(
-
-            JSON.stringify({
-
-                error:
-                    "Ocurrió un error al procesar la explicación."
-
-            }),
-
-            {
-
-                status: 500,
-
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                }
-
-            }
-
+        console.error(
+            "ERROR API:",
+            error
         );
+
+        return res.status(500).json({
+
+            error:
+                "Ocurrió un error al procesar la explicación."
+
+        });
 
     }
 
