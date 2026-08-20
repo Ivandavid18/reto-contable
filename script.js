@@ -514,8 +514,28 @@ async function enviarAudioIA(audio) {
                         }
                     );
 
-                const datos =
-                    await respuesta.json();
+               const textoRespuesta =
+    await respuesta.text();
+
+console.log(
+    "RESPUESTA DEL SERVIDOR:",
+    textoRespuesta
+);
+
+let datos;
+
+try {
+
+    datos = JSON.parse(textoRespuesta);
+
+} catch (error) {
+
+    throw new Error(
+        "El servidor no devolvió JSON. Respuesta: " +
+        textoRespuesta.substring(0, 300)
+    );
+
+}
 
                 console.log(
                     "Respuesta de la IA:",
