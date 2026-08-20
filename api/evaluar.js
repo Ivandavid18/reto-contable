@@ -19,10 +19,48 @@ export default async function handler(request) {
 
     try {
 
-        const formData = await request.formData();
+        const body = request.body;
 
-        const audio = formData.get("audio");
-        const concepto = formData.get("concepto");
+        const audio = body?.audio;
+        const concepto = body?.concepto;
+
+
+        if (!audio) {
+
+            return new Response(
+                JSON.stringify({
+                    error: "No se recibió el audio."
+                }),
+                {
+                    status: 400,
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                }
+            );
+
+        }
+
+
+        if (!concepto) {
+
+            return new Response(
+                JSON.stringify({
+                    error: "No se recibió el concepto."
+                }),
+                {
+                    status: 400,
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                }
+            );
+
+        }
+
+
+        const apiKey =
+            process.env.OPENAI_API_KEY;
 
 
         if (!audio) {
