@@ -8,7 +8,11 @@ export default async function handler(req, res) {
 
     try {
 
-        const { audio, concepto } = req.body || {};
+        const body = req.body || {};
+
+        const audio = body.audio;
+        const concepto = body.concepto;
+
 
         if (!audio) {
             return res.status(400).json({
@@ -16,44 +20,54 @@ export default async function handler(req, res) {
             });
         }
 
+
         if (!concepto) {
             return res.status(400).json({
                 error: "No se recibió el concepto."
             });
         }
 
-        const apiKey = process.env.OPENAI_API_KEY;
+
+        const apiKey =
+            process.env.OPENAI_API_KEY;
+
 
         if (!apiKey) {
             return res.status(500).json({
-                error: "La API de OpenAI no está configurada."
+                error:
+                    "La API de OpenAI no está configurada."
             });
         }
 
 
         /*
         ========================================
-        1. CONVERTIR BASE64 A ARCHIVO
+        CONVERTIR AUDIO BASE64
         ========================================
         */
 
-        const audioBuffer = Buffer.from(audio, "base64");
+        const audioBuffer =
+            Buffer.from(audio, "base64");
 
-        const audioBlob = new Blob(
-            [audioBuffer],
-            {
-                type: "audio/webm"
-            }
-        );
+
+        const audioBlob =
+            new Blob(
+                [audioBuffer],
+                {
+                    type: "audio/webm"
+                }
+            );
 
 
         /*
         ========================================
-        2. TRANSCRIBIR
+        ENVIAR AUDIO A OPENAI
         ========================================
         */
 
-        const formulario = new FormData();
+        const formulario =
+            new FormData();
+
 
         formulario.append(
             "file",
@@ -61,24 +75,27 @@ export default async function handler(req, res) {
             "explicacion.webm"
         );
 
+
         formulario.append(
             "model",
             "gpt-4o-mini-transcribe"
         );
 
 
-        const respuestaTranscripcion = await fetch(
-            "https://api.openai.com/v1/audio/transcriptions",
-            {
-                method: "POST",
+        const respuestaTranscripcion =
+            await fetch(
+                "https://api.openai.com/v1/audio/transcriptions",
+                {
+                    method: "POST",
 
-                headers: {
-                    "Authorization": "Bearer " + apiKey
-                },
+                    headers: {
+                        "Authorization":
+                            "Bearer " + apiKey
+                    },
 
-                body: formulario
-            }
-        );
+                    body: formulario
+                }
+            );
 
 
         const datosTranscripcion =
@@ -88,14 +105,14 @@ export default async function handler(req, res) {
         if (!respuestaTranscripcion.ok) {
 
             console.error(
-                "Error transcripción:",
+                "ERROR OPENAI TRANSCRIPCIÓN:",
                 datosTranscripcion
             );
 
             return res.status(500).json({
-                error: "No se pudo transcribir el audio."
+                error:
+                    "OpenAI no pudo transcribir el audio."
             });
-
         }
 
 
@@ -105,66 +122,71 @@ export default async function handler(req, res) {
 
         /*
         ========================================
-        3. EVALUAR EXPLICACIÓN CON IA
+        EVALUAR CON IA
         ========================================
         */
 
-        const respuestaIA = await fetch(
-            "https://api.openai.com/v1/chat/completions",
-            {
-                method: "POST",
+        const respuestaIA =
+            await fetch(
+                "https://api.openai.com/v1/chat/completions",
+                {
+                    method: "POST",
 
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer " + apiKey
-                },
+                    headers: {
+                        "Content-Type":
+                            "application/json",
 
-                body: JSON.stringify({
+                        "Authorization":
+                            "Bearer " + apiKey
+                    },
 
-                    model: "gpt-4o-mini",
+                    body: JSON.stringify({
 
-                    messages: [
+                        model: "gpt-4o-mini",
 
-                        {
-                            role: "system",
+                        messages: [
 
-                            content:
-                                "Eres un profesor de contabilidad. " +
-                                "Evalúa si el estudiante realmente comprendió " +
-                                "el concepto que está explicando. " +
-                                "Sé justo, claro y breve."
-                        },
+                            {
+                                role: "system",
 
-                        {
-                            role: "user",
+                                content:
+                                    "Eres un profesor de contabilidad. " +
+                                    "Evalúa si el estudiante realmente " +
+                                    "comprendió el concepto. " +
+                                    "Sé claro, justo y breve."
+                            },
 
-                            content:
-                                "Concepto que debía explicar: " +
-                                concepto +
+                            {
+                                role: "user",
 
-                                "\n\nExplicación del estudiante:\n" +
-                                transcripcion +
+                                content:
 
-                                "\n\nEvalúa la explicación y responde exactamente con esta estructura:\n\n" +
+                                    "El concepto que debía explicar es: " +
+                                    concepto +
 
-                                "RESULTADO: APROBADO o NECESITA REPASAR\n" +
+                                    "\n\nLa explicación del estudiante fue:\n" +
+                                    transcripcion +
 
-                                "PUNTUACIÓN: X/10\n" +
+                                    "\n\nEvalúa la explicación y responde con:\n\n" +
 
-                                "FORTALEZA: una frase\n" +
+                                    "RESULTADO: APROBADO o NECESITA REPASAR\n" +
 
-                                "DEBE MEJORAR: una frase\n" +
+                                    "PUNTUACIÓN: X/10\n" +
 
-                                "RECOMENDACIÓN: una frase"
-                        }
+                                    "FORTALEZA: una frase\n" +
 
-                    ],
+                                    "DEBE MEJORAR: una frase\n" +
 
-                    temperature: 0.2
+                                    "RECOMENDACIÓN: una frase"
+                            }
 
-                })
-            }
-        );
+                        ],
+
+                        temperature: 0.2
+
+                    })
+                }
+            );
 
 
         const datosIA =
@@ -174,24 +196,26 @@ export default async function handler(req, res) {
         if (!respuestaIA.ok) {
 
             console.error(
-                "Error evaluación IA:",
+                "ERROR OPENAI EVALUACIÓN:",
                 datosIA
             );
 
             return res.status(500).json({
-                error: "No se pudo evaluar la explicación."
+                error:
+                    "OpenAI no pudo evaluar la explicación."
             });
-
         }
 
 
         const evaluacion =
-            datosIA.choices?.[0]?.message?.content || "";
+            datosIA
+                .choices?.[0]
+                ?.message?.content || "";
 
 
         /*
         ========================================
-        4. RESPUESTA
+        RESPUESTA FINAL
         ========================================
         */
 
@@ -199,9 +223,11 @@ export default async function handler(req, res) {
 
             ok: true,
 
-            transcripcion: transcripcion,
+            transcripcion:
+                transcripcion,
 
-            evaluacion: evaluacion
+            evaluacion:
+                evaluacion
 
         });
 
@@ -209,7 +235,7 @@ export default async function handler(req, res) {
     } catch (error) {
 
         console.error(
-            "ERROR API:",
+            "ERROR GENERAL:",
             error
         );
 
