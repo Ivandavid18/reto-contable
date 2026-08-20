@@ -524,7 +524,7 @@ async function enviarAudioIA(audio) {
 
         const respuesta =
             await fetch(
-                "/api/evaluar",
+                "https://reto-contable.vercel.app/api/evaluar",
                 {
                     method: "POST",
                     body: datos
