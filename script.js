@@ -331,3 +331,356 @@ actualizarEstadisticas();
 mostrarRepaso();
 
 console.log("SCRIPT.JS CARGADO CORRECTAMENTE");
+
+/* =================================
+   GRABAR EXPLICACIÓN CON IA
+================================= */
+
+let grabadora = null;
+let partesAudio = [];
+let grabando = false;
+
+
+/* INICIAR / DETENER GRABACIÓN */
+
+async function grabarExplicacion() {
+
+    if (grabando) {
+
+        grabadora.stop();
+        return;
+
+    }
+
+
+    try {
+
+        const stream =
+            await navigator.mediaDevices.getUserMedia({
+                audio: true
+            });
+
+
+        partesAudio = [];
+
+        grabadora =
+            new MediaRecorder(stream);
+
+
+        grabadora.ondataavailable =
+            function(evento) {
+
+                if (evento.data.size > 0) {
+
+                    partesAudio.push(
+                        evento.data
+                    );
+
+                }
+
+            };
+
+
+        grabadora.onstop =
+            async function() {
+
+                grabando = false;
+
+                stream.getTracks().forEach(
+                    function(track) {
+                        track.stop();
+                    }
+                );
+
+
+                const audio =
+                    new Blob(
+                        partesAudio,
+                        {
+                            type: "audio/webm"
+                        }
+                    );
+
+
+                await enviarAudioIA(audio);
+
+            };
+
+
+        grabadora.start();
+
+        grabando = true;
+
+        actualizarBotonGrabacion();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "🎤 No se pudo acceder al micrófono. Revisa los permisos del navegador."
+        );
+
+    }
+
+}
+
+
+/* CAMBIAR TEXTO DEL BOTÓN */
+
+function actualizarBotonGrabacion() {
+
+    const boton =
+        document.getElementById(
+            "botonGrabacion"
+        );
+
+
+    if (!boton) return;
+
+
+    if (grabando) {
+
+        boton.textContent =
+            "⏹️ TERMINAR EXPLICACIÓN";
+
+        boton.classList.add(
+            "grabando"
+        );
+
+    } else {
+
+        boton.textContent =
+            "🎤 EMPEZAR A HABLAR";
+
+        boton.classList.remove(
+            "grabando"
+        );
+
+    }
+
+}
+
+
+/* ENVIAR AUDIO A LA IA */
+
+async function enviarAudioIA(audio) {
+
+    const boton =
+        document.getElementById(
+            "botonGrabacion"
+        );
+
+
+    const resultado =
+        document.getElementById(
+            "resultadoIA"
+        );
+
+
+    if (boton) {
+
+        boton.disabled = true;
+
+        boton.textContent =
+            "🤖 ANALIZANDO...";
+
+    }
+
+
+    if (resultado) {
+
+        resultado.classList.remove(
+            "oculto"
+        );
+
+        resultado.innerHTML =
+            "<p>🎧 Procesando tu explicación...</p>";
+
+    }
+
+
+    try {
+
+        const datos =
+            new FormData();
+
+
+        datos.append(
+            "audio",
+            audio,
+            "explicacion.webm"
+        );
+
+
+        datos.append(
+            "concepto",
+            conceptoActual
+                ? conceptoActual.nombre
+                : ""
+        );
+
+
+        const respuesta =
+            await fetch(
+                "/api/evaluar",
+                {
+                    method: "POST",
+                    body: datos
+                }
+            );
+
+
+        const datosRespuesta =
+            await respuesta.json();
+
+
+        if (!respuesta.ok) {
+
+            throw new Error(
+                datosRespuesta.error ||
+                "No se pudo evaluar la explicación."
+            );
+
+        }
+
+
+        mostrarResultadoIA(
+            datosRespuesta
+        );
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        if (resultado) {
+
+            resultado.innerHTML =
+
+                "<p>❌ " +
+                error.message +
+                "</p>";
+
+        }
+
+    }
+
+
+    if (boton) {
+
+        boton.disabled = false;
+
+        actualizarBotonGrabacion();
+
+    }
+
+}
+
+
+/* MOSTRAR EVALUACIÓN */
+
+function mostrarResultadoIA(datos) {
+
+    const resultado =
+        document.getElementById(
+            "resultadoIA"
+        );
+
+
+    if (!resultado) return;
+
+
+    const evaluacion =
+        datos.evaluacion;
+
+
+    let fortalezas = "";
+
+    if (
+        evaluacion.fortalezas &&
+        evaluacion.fortalezas.length
+    ) {
+
+        fortalezas =
+            "<ul>" +
+            evaluacion.fortalezas
+                .map(
+                    function(item) {
+                        return "<li>✅ " +
+                            item +
+                            "</li>";
+                    }
+                )
+                .join("") +
+            "</ul>";
+
+    }
+
+
+    let errores = "";
+
+    if (
+        evaluacion.errores &&
+        evaluacion.errores.length
+    ) {
+
+        errores =
+            "<ul>" +
+            evaluacion.errores
+                .map(
+                    function(item) {
+                        return "<li>⚠️ " +
+                            item +
+                            "</li>";
+                    }
+                )
+                .join("") +
+            "</ul>";
+
+    }
+
+
+    resultado.innerHTML =
+
+        "<h3>🤖 Evaluación de la IA</h3>" +
+
+        "<div class='notaIA'>" +
+        evaluacion.nota +
+        "/10" +
+        "</div>" +
+
+        "<h4>" +
+        evaluacion.estado +
+        "</h4>" +
+
+        "<p>" +
+        evaluacion.resumen +
+        "</p>" +
+
+        "<h4>✅ Fortalezas</h4>" +
+
+        fortalezas +
+
+        "<h4>⚠️ Para mejorar</h4>" +
+
+        errores +
+
+        "<h4>💡 Recomendación</h4>" +
+
+        "<p>" +
+        evaluacion.recomendacion +
+        "</p>" +
+
+        "<details>" +
+
+        "<summary>📝 Ver transcripción</summary>" +
+
+        "<p>" +
+        datos.transcripcion +
+        "</p>" +
+
+        "</details>";
+
+}
