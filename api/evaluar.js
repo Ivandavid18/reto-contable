@@ -111,19 +111,21 @@ export default async function handler(req, res) {
             await respuestaTranscripcion.json();
 
 
-        if (!respuestaTranscripcion.ok) {
+      if (!respuestaTranscripcion.ok) {
 
-            console.error(
-                "Error transcripción:",
-                datosTranscripcion
-            );
+    console.error(
+        "ERROR REAL DE OPENAI:",
+        datosTranscripcion
+    );
 
-            return res.status(500).json({
-                error:
-                    "No se pudo transcribir el audio."
-            });
+    return res.status(500).json({
+        error:
+            "OpenAI rechazó el audio.",
+        detalle:
+            datosTranscripcion
+    });
 
-        }
+}
 
 
         const transcripcion =
