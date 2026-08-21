@@ -162,6 +162,9 @@ function comenzarExplicacion() {
     document.getElementById("zonaExplicacion")
         .classList.remove("oculto");
 
+    document.getElementById("estado").textContent =
+        "🗣️ ¡Ahora explícalo!";
+
     actualizarExplicacion();
 
     intervaloExplicacion = setInterval(function() {
@@ -174,12 +177,21 @@ function comenzarExplicacion() {
 
             clearInterval(intervaloExplicacion);
 
-            alert("⏰ Terminó el minuto. ¡Muy bien!");
+            alert(
+                "⏰ Terminó el minuto. Ahora puedes terminar tu explicación."
+            );
+
         }
 
     }, 1000);
-}
 
+    window.scrollTo({
+        top:
+            document.getElementById("zonaExplicacion").offsetTop - 20,
+        behavior: "smooth"
+    });
+
+}
 
 function actualizarExplicacion() {
 
