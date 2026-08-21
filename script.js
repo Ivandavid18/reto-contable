@@ -333,93 +333,244 @@ mostrarRepaso();
 console.log("SCRIPT.JS CARGADO CORRECTAMENTE");
 
 /* =================================
-   GRABAR EXPLICACIÓN CON IA
-================================= */
+   EVALUACIÓN GRATIS CON VOZ
+   ================================= */
 
-let grabadora = null;
-let partesAudio = [];
+let reconocimiento = null;
 let grabando = false;
+let transcripcionLocal = "";
+let deteniendoGrabacion = false;
 
 
-/* INICIAR / DETENER GRABACIÓN */
+/* =================================
+   INICIAR / DETENER EXPLICACIÓN
+   ================================= */
 
-async function grabarExplicacion() {
+function grabarExplicacion() {
+
+    /*
+    Si ya está hablando, detenemos
+    */
 
     if (grabando) {
 
-        grabadora.stop();
-        return;
+        deteniendoGrabacion = true;
 
+        grabando = false;
+
+        actualizarBotonGrabacion();
+
+        if (reconocimiento) {
+            reconocimiento.stop();
+        }
+
+        return;
     }
 
 
-    try {
+    /*
+    Comprobar compatibilidad
+    */
 
-        const stream =
-            await navigator.mediaDevices.getUserMedia({
-                audio: true
-            });
-
-
-        partesAudio = [];
-
-        grabadora =
-            new MediaRecorder(stream);
+    const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
 
 
-        grabadora.ondataavailable =
-            function(evento) {
+    if (!SpeechRecognition) {
 
-                if (evento.data.size > 0) {
+        alert(
+            "⚠️ Tu navegador no permite reconocimiento de voz. Prueba con Chrome o Edge."
+        );
 
-                    partesAudio.push(
-                        evento.data
-                    );
-
-                }
-
-            };
+        return;
+    }
 
 
-        grabadora.onstop =
-            async function() {
+    /*
+    Crear reconocimiento
+    */
 
-                grabando = false;
-
-                stream.getTracks().forEach(
-                    function(track) {
-                        track.stop();
-                    }
-                );
+    reconocimiento =
+        new SpeechRecognition();
 
 
-                const audio =
-                    new Blob(
-                        partesAudio,
-                        {
-                            type: "audio/webm"
-                        }
-                    );
+    reconocimiento.lang = "es-ES";
+
+    reconocimiento.continuous = true;
+
+    reconocimiento.interimResults = true;
+
+    reconocimiento.maxAlternatives = 1;
 
 
-                await enviarAudioIA(audio);
+    transcripcionLocal = "";
 
-            };
+    deteniendoGrabacion = false;
 
 
-        grabadora.start();
+    /*
+    Cuando comienza
+    */
+
+    reconocimiento.onstart = function() {
 
         grabando = true;
 
         actualizarBotonGrabacion();
 
+        mostrarMensajeGrabacion(
+            "🔴 Escuchando... Habla con tus propias palabras."
+        );
+
+    };
+
+
+    /*
+    Cuando reconoce palabras
+    */
+
+    reconocimiento.onresult =
+        function(evento) {
+
+            let textoNuevo = "";
+
+            for (
+                let i = evento.resultIndex;
+                i < evento.results.length;
+                i++
+            ) {
+
+                textoNuevo +=
+                    evento.results[i][0].transcript + " ";
+
+            }
+
+
+            /*
+            Guardamos solamente texto final
+            */
+
+            for (
+                let i = evento.resultIndex;
+                i < evento.results.length;
+                i++
+            ) {
+
+                if (
+                    evento.results[i].isFinal
+                ) {
+
+                    transcripcionLocal +=
+                        evento.results[i][0].transcript +
+                        " ";
+
+                }
+
+            }
+
+
+            mostrarTranscripcion(
+                transcripcionLocal
+            );
+
+        };
+
+
+    /*
+    Cuando ocurre un error
+    */
+
+    reconocimiento.onerror =
+        function(evento) {
+
+            console.error(
+                "Error de reconocimiento:",
+                evento.error
+            );
+
+
+            if (
+                evento.error ===
+                "not-allowed"
+            ) {
+
+                grabando = false;
+
+                actualizarBotonGrabacion();
+
+                alert(
+                    "⚠️ Necesitamos permiso para usar el micrófono."
+                );
+
+            }
+
+        };
+
+
+    /*
+    Cuando termina
+    */
+
+    reconocimiento.onend =
+        function() {
+
+            /*
+            Si el usuario pulsó detener,
+            evaluamos la explicación.
+            */
+
+            if (deteniendoGrabacion) {
+
+                grabando = false;
+
+                actualizarBotonGrabacion();
+
+                evaluarExplicacionLocal();
+
+                return;
+            }
+
+
+            /*
+            Si el navegador se desconectó
+            mientras seguíamos hablando,
+            intentamos continuar.
+            */
+
+            if (grabando) {
+
+                try {
+
+                    reconocimiento.start();
+
+                } catch (error) {
+
+                    console.log(
+                        "No se pudo reiniciar el reconocimiento."
+                    );
+
+                }
+
+            }
+
+        };
+
+
+    /*
+    Comenzar
+    */
+
+    try {
+
+        reconocimiento.start();
 
     } catch (error) {
 
         console.error(error);
 
         alert(
-            "🎤 No se pudo acceder al micrófono. Revisa los permisos del navegador."
+            "No se pudo iniciar el reconocimiento de voz."
         );
 
     }
@@ -427,7 +578,9 @@ async function grabarExplicacion() {
 }
 
 
-/* CAMBIAR TEXTO DEL BOTÓN */
+/* =================================
+   BOTÓN
+   ================================= */
 
 function actualizarBotonGrabacion() {
 
@@ -445,152 +598,388 @@ function actualizarBotonGrabacion() {
         boton.textContent =
             "⏹️ TERMINAR EXPLICACIÓN";
 
-        boton.classList.add(
-            "grabando"
-        );
-
     } else {
 
         boton.textContent =
-            "🎤 EMPEZAR A HABLAR";
+            "🎙️ EMPEZAR A HABLAR";
 
-        boton.classList.remove(
-            "grabando"
+    }
+
+}
+
+
+/* =================================
+   MENSAJE
+   ================================= */
+
+function mostrarMensajeGrabacion(texto) {
+
+    const resultado =
+        document.getElementById(
+            "resultadoIA"
+        );
+
+
+    if (!resultado) return;
+
+
+    resultado.classList.remove(
+        "oculto"
+    );
+
+
+    resultado.innerHTML =
+        "<p>" +
+        texto +
+        "</p>";
+
+}
+
+
+/* =================================
+   MOSTRAR TRANSCRIPCIÓN
+   ================================= */
+
+function mostrarTranscripcion(texto) {
+
+    const resultado =
+        document.getElementById(
+            "resultadoIA"
+        );
+
+
+    if (!resultado) return;
+
+
+    resultado.classList.remove(
+        "oculto"
+    );
+
+
+    resultado.innerHTML =
+
+        "<h3>🎙️ Tu explicación</h3>" +
+
+        "<p>" +
+        (texto || "Escuchando...") +
+        "</p>";
+
+}
+
+
+/* =================================
+   EVALUAR SIN IA
+   ================================= */
+
+function evaluarExplicacionLocal() {
+
+    const texto =
+        transcripcionLocal
+            .toLowerCase()
+            .trim();
+
+
+    const resultado =
+        document.getElementById(
+            "resultadoIA"
+        );
+
+
+    if (!resultado) return;
+
+
+    if (!texto) {
+
+        resultado.classList.remove(
+            "oculto"
+        );
+
+
+        resultado.innerHTML =
+
+            "<h3>⚠️ No pude detectar una explicación</h3>" +
+
+            "<p>Intenta hablar nuevamente durante unos segundos.</p>";
+
+        return;
+    }
+
+
+    /*
+    Concepto actual
+    */
+
+    const concepto =
+        conceptoActual
+            ? conceptoActual.nombre.toLowerCase()
+            : "";
+
+
+    /*
+    Palabras que indican definición
+    */
+
+    const definicion = [
+        "es",
+        "significa",
+        "se refiere",
+        "consiste",
+        "concepto",
+        "se define"
+    ];
+
+
+    /*
+    Palabras relacionadas con utilidad
+    */
+
+    const utilidad = [
+        "sirve",
+        "permite",
+        "utiliza",
+        "utilidad",
+        "objetivo",
+        "función"
+    ];
+
+
+    /*
+    Palabras relacionadas con aplicación
+    */
+
+    const aplicacion = [
+        "aplica",
+        "aplicación",
+        "cuando",
+        "caso",
+        "proceso",
+        "registro",
+        "contabiliza"
+    ];
+
+
+    /*
+    Palabras relacionadas con ejemplo
+    */
+
+    const ejemplo = [
+        "ejemplo",
+        "por ejemplo",
+        "supongamos",
+        "imagina",
+        "caso"
+    ];
+
+
+    let puntos = 0;
+
+
+    /*
+    Mencionar el concepto
+    */
+
+    if (
+        concepto &&
+        texto.includes(concepto)
+    ) {
+
+        puntos += 2;
+
+    }
+
+
+    /*
+    Definición
+    */
+
+    if (
+        contieneAlguna(
+            texto,
+            definicion
+        )
+    ) {
+
+        puntos += 2;
+
+    }
+
+
+    /*
+    Utilidad
+    */
+
+    if (
+        contieneAlguna(
+            texto,
+            utilidad
+        )
+    ) {
+
+        puntos += 2;
+
+    }
+
+
+    /*
+    Aplicación
+    */
+
+    if (
+        contieneAlguna(
+            texto,
+            aplicacion
+        )
+    ) {
+
+        puntos += 2;
+
+    }
+
+
+    /*
+    Ejemplo
+    */
+
+    if (
+        contieneAlguna(
+            texto,
+            ejemplo
+        )
+    ) {
+
+        puntos += 2;
+
+    }
+
+
+    /*
+    Convertir puntos a nota
+    */
+
+    let nota = puntos;
+
+
+    /*
+    Evitar que una explicación
+    muy corta tenga buena nota
+    */
+
+    const cantidadPalabras =
+        texto.split(/\s+/).length;
+
+
+    if (
+        cantidadPalabras < 20
+    ) {
+
+        nota = Math.min(
+            nota,
+            4
         );
 
     }
 
-}
+
+    /*
+    Determinar resultado
+    */
+
+    let nivel = "";
+
+    let mensaje = "";
 
 
-/* ENVIAR AUDIO A LA IA */
+    if (nota >= 8) {
 
-async function enviarAudioIA(audio) {
+        nivel =
+            "🟢 APROBADO";
 
-    const resultado =
-        document.getElementById("resultadoIA");
-
-    if (resultado) {
-
-        resultado.classList.remove("oculto");
-
-        resultado.innerHTML =
-            "<p>🤖 Analizando tu explicación...</p>";
+        mensaje =
+            "Demuestras una buena comprensión del concepto.";
 
     }
 
-    try {
+    else if (nota >= 5) {
 
-        const reader = new FileReader();
+        nivel =
+            "🟡 CASI";
 
-        reader.onloadend = async function() {
+        mensaje =
+            "Tienes una comprensión básica, pero todavía puedes profundizar.";
 
-            try {
+    }
 
-                const base64 =
-                    reader.result.split(",")[1];
+    else {
 
-                const respuesta =
-                    await fetch(
-                        "/api/evaluar",
-                        {
-                            method: "POST",
+        nivel =
+            "🔴 REPASAR";
 
-                            headers: {
-                                "Content-Type":
-                                    "application/json"
-                            },
+        mensaje =
+            "La explicación todavía no demuestra suficiente comprensión.";
 
-                            body: JSON.stringify({
+    }
 
-                                audio: base64,
 
-                                concepto:
-                                    conceptoActual
-                                        ? conceptoActual.nombre
-                                        : ""
+    /*
+    Mostrar resultado
+    */
 
-                            })
-                        }
-                    );
+    resultado.classList.remove(
+        "oculto"
+    );
 
-               const textoRespuesta =
-    await respuesta.text();
 
-console.log(
-    "RESPUESTA DEL SERVIDOR:",
-    textoRespuesta
-);
+    resultado.innerHTML =
 
-let datos;
+        "<h2>" +
+        nivel +
+        "</h2>" +
 
-try {
+        "<h3>📊 Nota: " +
+        nota +
+        "/10</h3>" +
 
-    datos = JSON.parse(textoRespuesta);
+        "<p>" +
+        mensaje +
+        "</p>" +
 
-} catch (error) {
+        "<hr>" +
 
-    throw new Error(
-        "El servidor no devolvió JSON. Respuesta: " +
-        textoRespuesta.substring(0, 300)
+        "<h3>🎙️ Lo que dijiste</h3>" +
+
+        "<p>" +
+        texto +
+        "</p>" +
+
+        "<hr>" +
+
+        "<p>" +
+        "La evaluación automática comprueba si mencionaste definición, utilidad, aplicación y ejemplo." +
+        "</p>";
+
+}
+
+
+/* =================================
+   BUSCAR PALABRAS
+   ================================= */
+
+function contieneAlguna(
+    texto,
+    palabras
+) {
+
+    return palabras.some(
+        function(palabra) {
+
+            return texto.includes(
+                palabra
+            );
+
+        }
     );
 
 }
-
-                console.log(
-                    "Respuesta de la IA:",
-                    datos
-                );
-
-                if (!respuesta.ok) {
-
-                    throw new Error(
-                        datos.error ||
-                        "La IA no pudo evaluar la explicación."
-                    );
-
-                }
-
-                mostrarResultadoIA(datos);
-
-            } catch (error) {
-
-                console.error(error);
-
-                if (resultado) {
-
-                    resultado.innerHTML =
-                        "<p>❌ " +
-                        error.message +
-                        "</p>";
-
-                }
-
-            }
-
-        };
-
-        reader.readAsDataURL(audio);
-
-    } catch (error) {
-
-        console.error(error);
-
-        if (resultado) {
-
-            resultado.innerHTML =
-                "<p>❌ No se pudo enviar el audio.</p>";
-
-        }
-
-    }
-
-}
-
-
-/* MOSTRAR EVALUACIÓN */
-
-function mostrarResultadoIA(datos) {
 
     const resultado =
         document.getElementById(
